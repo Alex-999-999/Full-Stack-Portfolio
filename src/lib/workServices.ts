@@ -1,45 +1,59 @@
-/** Loads preview.png from each subfolder under src/assets/Works/ */
-const WORK_PREVIEW_BY_FOLDER = Object.fromEntries(
-  Object.entries(
-    import.meta.glob<string>("@/assets/Works/*/preview.png", {
-      eager: true,
-      import: "default",
-    }),
-  )
-    .map(([path, url]) => {
-      const match = path.match(/\/Works\/([^/]+)\/preview\.png$/i);
-      return match ? ([match[1], url] as const) : null;
-    })
-    .filter((entry): entry is readonly [string, string] => entry !== null),
-) as Record<string, string>;
+import dydinPreview from "@/assets/Works/web/dydin/preview.png";
+import qbcosmeticPreview from "@/assets/Works/web/qbcosmetic/preview.png";
+import bonethomePreview from "@/assets/Works/web/bonethome/preview.png";
+import perfexkitchenPreview from "@/assets/Works/web/perfexkitchen/preview.png";
+import catalogakPreview from "@/assets/Works/mobile/catalogak/preview.png";
+import urestaurantsPreview from "@/assets/Works/mobile/urestaurants/preview.png";
+import readyecommercePreview from "@/assets/Works/mobile/readyecommerce/preview.png";
+import casematePreview from "@/assets/Works/mobile/casemate/preview.png";
 
-/** Aspect ratio for project preview mockups (1448×1086). */
+export type WorkCategory = "web" | "mobile";
+
+const WORK_PREVIEW_BY_KEY: Record<string, string> = {
+  "web/dydin": dydinPreview,
+  "web/qbcosmetic": qbcosmeticPreview,
+  "web/bonethome": bonethomePreview,
+  "web/perfexkitchen": perfexkitchenPreview,
+  "mobile/catalogak": catalogakPreview,
+  "mobile/urestaurants": urestaurantsPreview,
+  "mobile/readyecommerce": readyecommercePreview,
+  "mobile/casemate": casematePreview,
+};
+
+export const WORK_SECTIONS: ReadonlyArray<{
+  category: WorkCategory;
+  label: string;
+}> = [
+  { category: "web", label: "Web" },
+  { category: "mobile", label: "Mobile App" },
+];
+
 export const FULLSTACK_PREVIEW_ASPECT = "1448 / 1086";
 
 export interface WorkService {
+  category: WorkCategory;
   number: string;
   slug: string;
   title: string;
-  /** Short copy for the work listing grid. */
   description: string;
-  /** Long-form copy for the project detail page only. Falls back to `description`. */
   pageDescription?: string;
+  frontendStack: readonly string[];
+  backendStack: readonly string[];
+  techHighlights: readonly string[];
   image: string;
-  /** CSS aspect-ratio value; defaults to desktop preview ratio. */
   imageAspect?: string;
-  /** External URL for the project page “Check out my work” link. */
   ctaUrl?: string;
 }
 
-function resolveWorkPreview(assetFolder: string): string {
-  const fromFolder = WORK_PREVIEW_BY_FOLDER[assetFolder];
+function resolveWorkPreview(category: WorkCategory, assetFolder: string): string {
+  const key = `${category}/${assetFolder}`;
+  const fromFolder = WORK_PREVIEW_BY_KEY[key];
   if (fromFolder) return fromFolder;
   throw new Error(
-    `Missing preview for "${assetFolder}". Add src/assets/Works/${assetFolder}/preview.png`,
+    `Missing preview for "${key}". Add src/assets/Works/${category}/${assetFolder}/preview.png`,
   );
 }
 
-/** "Ningbo DYD HVAC & Appliance Parts Website" → "ningbo-dyd-hvac-appliance-parts-website" */
 export function workProjectSlug(title: string): string {
   return title
     .toLowerCase()
@@ -51,94 +65,295 @@ export function workProjectSlug(title: string): string {
 
 type WorkServiceInput = Omit<WorkService, "slug" | "image"> & {
   slug?: string;
-  /** Folder name under src/assets/Works/ (e.g. bonethome, perfexkitchen). */
   assetFolder: string;
 };
 
 function service(entry: WorkServiceInput): WorkService {
-  const { assetFolder, ...rest } = entry;
+  const { assetFolder, category, ...rest } = entry;
   return {
     ...rest,
-    image: resolveWorkPreview(assetFolder),
+    category,
+    image: resolveWorkPreview(category, assetFolder),
     slug: entry.slug ?? workProjectSlug(entry.title),
   };
 }
 
 export const WORK_SERVICES: WorkService[] = [
   service({
+    category: "web",
     number: "01",
     assetFolder: "dydin",
     title: "Ningbo DYD HVAC & Appliance Parts Website",
     description:
-      "A full-stack B2B ecommerce website for Ningbo DYD Import and Export Co., Ltd., specializing in HVAC and aftermarket appliance parts — washing machine, dryer, refrigerator, oven, dishwasher, and microwave components. The platform highlights 20+ years of experience, product catalogs, services, and a dependable shopping experience.",
-    pageDescription: `Ningbo DYD (dydin.com) was a full-stack web project I built for a Ningbo-based import and export company focused on HVAC and aftermarket appliance parts. The live site presents the brand promise "Durable. Yours. Dependable" and more than 20 years of professional experience supplying parts from washing machines and dryers to refrigerators, gas range ovens, dishwashers, and microwaves.
+      "Full-stack B2B ecommerce for HVAC and aftermarket appliance parts — industrial catalog, minimum-order pricing, and dependable shopping flows backed by 20+ years of industry experience.",
+    frontendStack: [
+      "Next.js",
+      "TypeScript",
+      "Tailwind CSS",
+      "Responsive UI",
+    ],
+    backendStack: [
+      "Python",
+      "REST API",
+      "PostgreSQL",
+      "Redis",
+      "JWT Auth",
+    ],
+    techHighlights: [
+      "Large multi-category parts catalog with MOQ and pricing",
+      "Account, cart, and checkout for B2B buyers",
+      "Blog, FAQ, and trust content for aftermarket parts",
+      "SSR-friendly architecture for SEO and performance",
+    ],
+    pageDescription: `Ningbo DYD (dydin.com) is a full-stack B2B platform for an import and export company supplying washing machine, dryer, refrigerator, oven, dishwasher, and microwave parts. The site communicates the brand promise "Durable. Yours. Dependable" while making a technical catalog approachable on desktop and mobile.
 
-My work focused on designing and implementing a responsive frontend that makes a large industrial catalog easy to browse. The homepage and inner pages include product listings with pricing and minimum-order details, brand and service sections, blog content, about pages (our story, core values, reviews), FAQ and contact flows, newsletter signup, and standard ecommerce features such as login, registration, cart, and account tools. I paid close attention to clear category navigation, product card layout, trust messaging, and mobile-friendly structure so B2B buyers can quickly find the right replacement parts.
-
-On the backend, I built a Python API layer connected to a PostgreSQL database to support dynamic product data, user accounts, cart state, and editorial content. This kept the catalog maintainable while supporting authenticated shopping flows and data-driven pages instead of relying on static markup alone.
-
-The tech stack for this project was Next.js for the application framework and routing, Tailwind CSS for consistent utility-first styling and responsive UI, Python for server-side logic and APIs, and PostgreSQL for reliable relational data storage. Together, these tools delivered a fast, scalable platform that balances corporate credibility with practical parts sourcing and ecommerce functionality.
-
-This project strengthened my experience building a full-stack industrial B2B website — combining Next.js frontend development, Tailwind-based UI implementation, Python backend architecture, and PostgreSQL-backed data modeling into one production-ready platform.`,
+I designed the storefront around fast category navigation, readable product cards, and clear paths from discovery to inquiry and purchase. Content sections support long-term trust — services, about pages, reviews, and editorial updates — without overwhelming buyers who need the right part quickly.`,
     imageAspect: FULLSTACK_PREVIEW_ASPECT,
     ctaUrl: "https://dydin.com/",
   }),
   service({
+    category: "web",
     number: "02",
     assetFolder: "qbcosmetic",
     title: "Qianbang Group Cosmetics & Brand Consulting Website",
     description:
-      "A full-stack corporate website for Guangzhou Qianbang Group (QB Cosmetic), an industry leader in cosmetics brand consulting, ODM/OEM services, and product development. The platform presents company credentials, product categories, factory capabilities, news, and a shopping experience for skincare and beauty catalog items.",
-    pageDescription: `Qianbang Group (QB Cosmetic) was a full-stack web project I built for a Guangzhou-based cosmetics and brand consulting company with more than 20 years in biomedical, cosmetics, and medical device industries. The live site at qbcosmetic.com serves as both a corporate presence and a product-facing platform — introducing the group's R&D bases, supply-chain strength, ODM/OEM offering, and trust metrics such as mature formulas, registration certificates, and team scale.
+      "Corporate and product-facing site for a cosmetics brand consulting group — ODM/OEM positioning, factory credentials, category browsing, and ecommerce for skincare and beauty lines.",
+    frontendStack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Component-driven UI",
+    ],
+    backendStack: [
+      "Node.js",
+      "REST API",
+      "PostgreSQL",
+      "Session auth",
+      "Media storage",
+    ],
+    techHighlights: [
+      "Corporate storytelling with factory and R&D proof points",
+      "Product categories for cleansers, serums, sun care, and moisturizers",
+      "Cart, registration, and account-ready ecommerce flows",
+      "Structured CMS-style content for news and brand pages",
+    ],
+    pageDescription: `Qianbang Group (qbcosmetic.com) serves as both a brand authority site and a shoppable catalog for a Guangzhou cosmetics and consulting company. The experience introduces supply-chain strength, certifications, and ODM/OEM services while still supporting practical product discovery.
 
-My work focused on designing and implementing a responsive frontend that communicates the brand's authority clearly. The homepage and inner pages highlight company introduction, category browsing (facial cleansers, serums, sun care, moisturizers, and related product lines), factory imagery, corporate news, brand information, blog content, and standard ecommerce flows including login, registration, cart, and contact. I paid close attention to layout hierarchy, bilingual-ready structure, navigation, and readable presentation of dense B2B content so visitors can quickly understand services and explore products.
-
-On the backend, I built a Node.js API layer connected to a PostgreSQL database to support dynamic content, user accounts, cart state, and structured product or editorial data. This allowed the marketing site to stay maintainable while still supporting authenticated flows and data-driven sections rather than hard-coding everything into static pages.
-
-The tech stack for this project was Next.js for the application framework and routing, Tailwind CSS for consistent utility-first styling and responsive UI, Node.js for server-side logic and APIs, and PostgreSQL for reliable relational data storage. Together, these tools made it possible to deliver a fast, scalable site that balances corporate storytelling with practical ecommerce functionality.
-
-This project strengthened my experience building a full-stack cosmetics industry website — combining Next.js frontend development, Tailwind-based UI implementation, Node.js backend architecture, and PostgreSQL-backed data modeling into one production-ready platform.`,
+The interface prioritizes hierarchy and clarity for dense B2B information — bilingual-ready layout patterns, collection structure, and conversion-focused product pages that help visitors understand credentials and shop in one journey.`,
     imageAspect: FULLSTACK_PREVIEW_ASPECT,
     ctaUrl: "https://qbcosmetic.com/",
   }),
   service({
+    category: "web",
     number: "03",
     assetFolder: "bonethome",
     title: "Bonet Houseware Kitchenware & Precision Tools Website",
     description:
-      "A full-stack multilingual ecommerce website for Bonet Houseware Co., Ltd. (bonethome.com), a Yangjiang-based manufacturer of kitchenware, professional scissors, knives, and multi-functional kitchen tools. The platform showcases product series, factory story, hot-selling catalog, and global B2B shopping flows.",
-    pageDescription: `Bonet Houseware (bonethome.com) was a full-stack web project I built for a kitchenware and precision cutting tools manufacturer based in Yangjiang, China's renowned knives and scissors hub. The live site presents Bonet / MuMei as an innovative brand blending traditional craftsmanship with modern technology since 2011, with multilingual support across English, Chinese, Arabic, Spanish, French, German, Russian, Vietnamese, and Portuguese.
+      "Multilingual ecommerce for a Yangjiang kitchenware manufacturer — product series, factory story, hot-selling catalog, and global B2B shopping for scissors, knives, and specialty tools.",
+    frontendStack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "i18n-ready UI",
+    ],
+    backendStack: [
+      "Node.js",
+      "REST API",
+      "PostgreSQL",
+      "Localized content",
+      "Cart & orders",
+    ],
+    techHighlights: [
+      "Multi-language storefront for global buyers",
+      "Series collections and promotional product grids",
+      "Factory and brand storytelling for Bonet / MuMei",
+      "Assistant-ready contact and service flows",
+    ],
+    pageDescription: `Bonet Houseware (bonethome.com) presents precision kitchenware and cutting tools with a multilingual experience spanning English, Chinese, Arabic, European languages, and more. The site balances manufacturer credibility with a large SKU catalog and conversion-focused shopping.
 
-My work focused on designing and implementing a responsive frontend that highlights premium kitchen products — including multi-purpose scissors, knife sets, peelers, camping tools, and specialty gadgets. The homepage and inner pages feature product spotlights, hot-selling grids, series collections, about and factory storytelling, blog content, contact forms, login and registration, cart functionality, and a customer service assistant. I paid close attention to multilingual navigation, product discovery, promotional sections, and clean presentation of a large SKU catalog.
-
-On the backend, I built a Node.js API layer connected to a PostgreSQL database to support dynamic product data, user accounts, cart state, and editorial content. This kept the catalog and localized content maintainable while supporting authenticated ecommerce flows and data-driven pages.
-
-The tech stack for this project was Next.js for the application framework and routing, Tailwind CSS for consistent utility-first styling and responsive UI, Node.js for server-side logic and APIs, and PostgreSQL for reliable relational data storage. Together, these tools delivered a fast, scalable platform for global kitchenware sales and brand storytelling.
-
-This project strengthened my experience building a full-stack manufacturing and ecommerce website — combining Next.js frontend development, Tailwind-based UI implementation, Node.js backend architecture, and PostgreSQL-backed data modeling into one production-ready platform.`,
+I focused on product discovery for varied categories — scissors, knife sets, peelers, and specialty gadgets — with consistent spacing, strong imagery, and navigation that scales as collections grow.`,
     imageAspect: FULLSTACK_PREVIEW_ASPECT,
     ctaUrl: "https://bonethome.com/",
   }),
   service({
+    category: "web",
     number: "04",
     assetFolder: "perfexkitchen",
     title: "Perfex Commercial Kitchen Equipment Website",
     description:
-      "A full-stack B2B website for Guangzhou Perfex Kitchen Equipment Co., Ltd., a professional catering equipment manufacturer offering bar, coffee, cooking, food processor, and snack machine categories. The platform emphasizes European-quality positioning, custom tooling design, inquiry workflows, and product catalogs for commercial kitchens.",
-    pageDescription: `Perfex Kitchen (perfexkitchen.com) was a full-stack web project I built for a Guangzhou-based commercial kitchen equipment manufacturer with more than ten years of experience supplying professional catering equipment to international markets. The live site positions Perfex around made-in-Europe quality standards, in-house production capabilities across a 5,000 sqm facility, and categories spanning bar equipment, coffee machines, cooking lines, food processors, and snack machines.
+      "B2B equipment catalog for a commercial kitchen manufacturer — deep category navigation, inquiry workflows, new product showcases, and quote-oriented CTAs for international buyers.",
+    frontendStack: [
+      "Next.js",
+      "TypeScript",
+      "Tailwind CSS",
+      "Mega-menu UX",
+    ],
+    backendStack: [
+      "Python",
+      "REST API",
+      "PostgreSQL",
+      "Inquiry lists",
+      "Role-based access",
+    ],
+    techHighlights: [
+      "Bar, coffee, cooking, and food-processor category depth",
+      "SKU-rich product pages for commercial equipment",
+      "Custom tooling and factory capability sections",
+      "Quote and inquiry flows for B2B buyers",
+    ],
+    pageDescription: `Perfex Kitchen (perfexkitchen.com) positions a Guangzhou manufacturer for international catering buyers, emphasizing in-house production, quality standards, and a broad equipment range from bar lines to snack machines.
 
-My work focused on designing and implementing a responsive frontend that makes complex B2B equipment easy to explore. The homepage and inner pages include category mega-menus, new product showcases (charbroilers, griddles, fryers, ovens, and related SKUs), about and factory content, customized baking tool design services, events and updates, FAQ and contact flows, inquiry list functionality, login and registration, and quote-oriented CTAs. I paid close attention to technical product presentation, navigation depth for large catalogs, and trust-building copy for commercial buyers.
-
-On the backend, I built a Python API layer connected to a PostgreSQL database to support dynamic product data, inquiry lists, user accounts, and structured editorial content. This allowed the marketing and catalog experience to stay maintainable while supporting authenticated B2B workflows and data-driven product pages.
-
-The tech stack for this project was Next.js for the application framework and routing, Tailwind CSS for consistent utility-first styling and responsive UI, Python for server-side logic and APIs, and PostgreSQL for reliable relational data storage. Together, these tools delivered a scalable platform that balances manufacturer credibility with practical equipment sourcing.
-
-This project strengthened my experience building a full-stack commercial kitchen equipment website — combining Next.js frontend development, Tailwind-based UI implementation, Python backend architecture, and PostgreSQL-backed data modeling into one production-ready platform.`,
+The UX is built for technical buyers who compare specifications before requesting quotes — organized mega-menus, factory content, events, and product showcases that keep high-SKU catalogs scannable on any device.`,
     imageAspect: FULLSTACK_PREVIEW_ASPECT,
     ctaUrl: "https://perfexkitchen.com/",
+  }),
+  service({
+    category: "mobile",
+    number: "01",
+    assetFolder: "catalogak",
+    title: "Catalogak POS & E-commerce Mobile App",
+    description:
+      "Flutter Android app unifying in-store POS and online sales — inventory sync, order management, WhatsApp customer updates, and omnichannel reporting for retailers.",
+    frontendStack: [
+      "Flutter",
+      "Dart",
+      "Bloc",
+      "Material Design",
+      "Android",
+    ],
+    backendStack: [
+      "Node.js",
+      "REST API",
+      "PostgreSQL",
+      "WebSockets",
+      "WhatsApp API",
+    ],
+    techHighlights: [
+      "POS and online storefront synced from one app",
+      "WhatsApp order status updates for customers",
+      "Centralized inventory and order dashboard",
+      "Combined in-store and online sales insights",
+    ],
+    pageDescription: `Catalogak is an omnichannel retail app for Al Takamul Alteqani Computers (UAE), published on Google Play. Merchants run counter and mobile sales from one client while keeping stock and orders aligned.
+
+The UI is optimized for staff on the move — quick product access, clear order states, and operational screens that reduce friction during busy retail hours.`,
+    imageAspect: FULLSTACK_PREVIEW_ASPECT,
+    ctaUrl:
+      "https://play.google.com/store/apps/details?id=catalogak.client.ae.altkamul",
+  }),
+  service({
+    category: "mobile",
+    number: "02",
+    assetFolder: "urestaurants",
+    title: "URestaurants Local Dining Discovery Mobile App",
+    description:
+      "Flutter discovery app for local restaurants — menus, venue details, and contact info in a lightweight Food & Drink experience on Google Play.",
+    frontendStack: [
+      "Flutter",
+      "Dart",
+      "GoRouter",
+      "Material Design",
+      "Android",
+    ],
+    backendStack: [
+      "Python",
+      "REST API",
+      "PostgreSQL",
+      "Redis caching",
+      "Content API",
+    ],
+    techHighlights: [
+      "Restaurant listings with menus and contact details",
+      "Readable browse-first layouts for quick decisions",
+      "Cached content for faster repeat visits",
+      "Maintainable venue data model for updates",
+    ],
+    pageDescription: `URestaurants helps diners in Italy find nearby venues with up-to-date menus, phone numbers, and practical visit information. The app is published on Google Play under Food & Drink.
+
+The experience stays intentionally simple — fast scanning, clear typography, and direct access to the details people need when choosing where to eat.`,
+    imageAspect: FULLSTACK_PREVIEW_ASPECT,
+    ctaUrl:
+      "https://play.google.com/store/apps/details?id=celo.URestaurants",
+  }),
+  service({
+    category: "mobile",
+    number: "03",
+    assetFolder: "readyecommerce",
+    title: "Ready eCommerce Seller Mobile App",
+    description:
+      "React Native seller app for store owners — product CRUD, order creation, on-the-spot payments, push alerts, and sales analytics on Google Play.",
+    frontendStack: [
+      "React Native",
+      "TypeScript",
+      "React Navigation",
+      "TanStack Query",
+      "Android",
+    ],
+    backendStack: [
+      "Node.js",
+      "REST API",
+      "PostgreSQL",
+      "FCM push",
+      "Payment gateways",
+    ],
+    techHighlights: [
+      "Publish and draft products from mobile",
+      "Order builder with live inventory sync",
+      "Cash, card, and wallet payment collection",
+      "Revenue and bestseller analytics with alerts",
+    ],
+    pageDescription: `Ready eCommerce Seller is a business app by RazinSoft Ltd for entrepreneurs and retail brands managing stores on the go. Sellers add products, fulfill orders, get paid, and monitor performance without a desktop.
+
+Dashboard-style screens emphasize speed — fewer taps to create orders, clear payment status, and notifications when new sales or reviews arrive.`,
+    imageAspect: FULLSTACK_PREVIEW_ASPECT,
+    ctaUrl:
+      "https://play.google.com/store/apps/details?id=com.readyecommerce.sellerapp",
+  }),
+  service({
+    category: "mobile",
+    number: "04",
+    assetFolder: "casemate",
+    title: "Case-Mate Shopping Mobile App",
+    description:
+      "React Native shopping app for Case-Mate — exclusive drops, favorites, push-driven launches, and secure checkout on Google Play.",
+    frontendStack: [
+      "React Native",
+      "TypeScript",
+      "React Navigation",
+      "TanStack Query",
+      "Android",
+    ],
+    backendStack: [
+      "Python",
+      "REST API",
+      "PostgreSQL",
+      "FCM push",
+      "Ecommerce API",
+    ],
+    techHighlights: [
+      "Early-access and exclusive product launches",
+      "Saved favorites and fast return checkout",
+      "Push notifications for offers and drops",
+      "Order history and account management",
+    ],
+    pageDescription: `Case-Mate is a branded mobile shop for phone cases and accessories, built for customers who want launches, exclusives, and quick checkout on Android.
+
+The interface highlights product imagery and drop culture while keeping cart and account flows straightforward for repeat buyers.`,
+    imageAspect: FULLSTACK_PREVIEW_ASPECT,
+    ctaUrl:
+      "https://play.google.com/store/apps/details?id=co.app.id_casemate",
   }),
 ];
 
 export function getWorkServiceBySlug(slug: string): WorkService | undefined {
   return WORK_SERVICES.find((project) => project.slug === slug);
+}
+
+export function getWorkServicesByCategory(category: WorkCategory): WorkService[] {
+  return WORK_SERVICES.filter((project) => project.category === category);
+}
+
+/** Search params for `/work` — keeps the active Web / Mobile tab when navigating back. */
+export function workListSearch(category: WorkCategory): { tab: WorkCategory } {
+  return { tab: category };
 }

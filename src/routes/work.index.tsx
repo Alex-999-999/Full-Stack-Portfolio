@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 import Work from "@/pages/Work";
+import type { WorkCategory } from "@/lib/workServices";
+
+function parseWorkTab(search: Record<string, unknown>): WorkCategory {
+  return search.tab === "mobile" ? "mobile" : "web";
+}
 
 export const Route = createFileRoute("/work/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: parseWorkTab(search),
+  }),
   head: () => ({
     meta: [
       { title: "Work — En Zuo" },

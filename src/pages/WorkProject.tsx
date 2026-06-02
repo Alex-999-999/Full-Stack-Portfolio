@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import logoImage from "@/assets/en_zuo_logo_transparent.webp";
 import noiseTexture from "@/assets/noise-tex.webp";
 import { CheckOutMyWorkLink } from "@/components/CheckOutMyWorkLink";
+import { WorkTechStack } from "@/components/WorkTechStack";
 import { MenuOverlay } from "@/components/MenuOverlay";
 import { ProjectPreviewLightbox } from "@/components/ProjectPreviewLightbox";
 import { WorkCornerMarks } from "@/components/WorkCornerMarks";
@@ -10,6 +11,7 @@ import { Route } from "@/routes/work.$slug";
 import {
   FULLSTACK_PREVIEW_ASPECT,
   getWorkServiceBySlug,
+  workListSearch,
 } from "@/lib/workServices";
 
 const MENU_FONT = "'Bebas Neue', sans-serif";
@@ -25,7 +27,11 @@ export default function WorkProject() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-white">
         <p className="text-lg">Project not found.</p>
-        <Link to="/work" className="mt-6 text-white underline">
+        <Link
+          to="/work"
+          search={workListSearch("web")}
+          className="mt-6 text-white underline"
+        >
           Back to work
         </Link>
       </main>
@@ -66,6 +72,7 @@ export default function WorkProject() {
       >
         <Link
           to="/work"
+          search={workListSearch(project.category)}
           className="text-[14px] text-white/60 transition-opacity hover:text-white"
         >
           ← Back to work
@@ -94,6 +101,12 @@ export default function WorkProject() {
             />
           </button>
         ) : null}
+
+        <WorkTechStack
+          frontendStack={project.frontendStack}
+          backendStack={project.backendStack}
+          highlights={project.techHighlights}
+        />
 
         <div className="mt-10 max-w-3xl space-y-5 text-[15px] leading-relaxed text-white/70">
           {(project.pageDescription ?? project.description)
